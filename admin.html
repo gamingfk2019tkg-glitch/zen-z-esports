@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ZEN-Z ESPORTS — Admin Panel</title>
+<style>
+:root{--bg:#080b12;--panel:#111722;--panel2:#171e2b;--line:#263043;--text:#f4f7fb;--muted:#98a3b5;--primary:#635bff;--green:#16a36a;--red:#e5484d;--yellow:#d99a16}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Arial,sans-serif}
+button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}
+.login{min-height:100vh;display:grid;place-items:center;padding:18px}.box{width:min(440px,100%);background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:28px;box-shadow:0 24px 80px #0009}
+.logo{font-size:25px;font-weight:900}.muted{color:var(--muted)}.field{margin:12px 0}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+input,select,textarea{width:100%;padding:12px;border-radius:11px;border:1px solid var(--line);background:#0b1018;color:var(--text);outline:none}textarea{min-height:95px}
+.btn{border:0;border-radius:10px;padding:11px 15px;background:var(--primary);color:#fff;font-weight:750}.btn.secondary{background:#242d3d}.btn.green{background:var(--green)}.btn.red{background:var(--red)}.btn.small{padding:7px 10px;font-size:12px}
+.wrap{max-width:1250px;margin:auto;padding:18px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stat{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:17px}.stat b{font-size:27px;display:block;margin-top:4px}
+.tabs{display:flex;gap:7px;overflow:auto;margin:16px 0}.tabs button{border:0;background:#171e2a;color:#cbd3df;padding:10px 13px;border-radius:10px;white-space:nowrap}.tabs button.active{background:var(--primary);color:white}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.actions{display:flex;gap:7px;flex-wrap:wrap}.badge{display:inline-block;border-radius:99px;padding:4px 8px;font-size:11px;background:#273143}.ok{background:#064d35;color:#a7f3d0}.warn{background:#67470a;color:#fde68a}.danger{background:#641f24;color:#fecaca}
+.tablewrap{overflow:auto}.table{width:100%;border-collapse:collapse;min-width:0}.table th,.table td{padding:11px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle;word-break:break-word}.table th{font-size:12px;color:#aeb8c7}
+#toast{position:fixed;right:16px;bottom:16px;background:white;color:#111;padding:12px 15px;border-radius:11px;display:none}
+@media(max-width:800px){.grid{grid-template-columns:1fr 1fr}.two{grid-template-columns:1fr}.wrap{padding:12px}}
+</style>
+</head>
+<body>
+
+<div id="login" class="login">
+ <div class="box">
+  <div class="logo">ZEN-Z ESPORTS</div>
+  <p class="muted">Owner / Admin Control Panel</p>
+  <div class="tabs" style="margin:12px 0">
+   <button id="ownerMode" class="active" type="button">OWNER LOGIN</button>
+   <button id="adminMode" type="button">ADMIN LOGIN</button>
+  </div>
+  <div class="field" id="emailField"><label>Email</label><input id="email" type="email" placeholder="Firebase account email"></div>
+  <div class="field"><label>Password</label><input id="password" type="password" placeholder="Enter password"></div>
+  <button class="btn" style="width:100%" id="loginBtn">Login as Owner</button>
+  <p class="muted" style="font-size:12px;margin-top:8px">Owner password: Farhan_Owner_king &nbsp;•&nbsp; Admin password: Admin_69</p>
+  <p id="loginErr" class="muted"></p>
+ </div>
+</div>
+
+<div id="app" class="hidden">
+<div class="wrap">
+ <div class="top">
+  <div><div class="logo">ZEN-Z ADMIN</div><div id="role" class="muted"></div></div>
+  <button class="btn secondary" id="logoutBtn">Logout</button>
+ </div>
+
+ <div class="grid">
+  <div class="stat"><span class="muted">Users</span><b id="countUsers">0</b></div>
+  <div class="stat"><span class="muted">Tournaments</span><b id="countMatches">0</b></div>
+  <div class="stat"><span class="muted">Admins</span><b id="countAdmins">0</b></div>
+  <div class="stat"><span class="muted">Pending</span><b id="countPending">0</b></div>
+ </div>
+
+ <div class="tabs">
+  <button class="active" data-tab="dashboard">Dashboard</button>
+  <button data-tab="matches">Tournaments</button>
+  <button data-tab="users">Users</button>
+  <button data-tab="requests">Money Requests</button>
+  <button data-tab="settings">App Settings</button>
+  <button data-tab="admins" id="adminsTab">Admins</button>
+ </div>
+
+ <section id="dashboard" class="section">
+  <div class="card"><h2>Control Center</h2><p class="muted">Owner is limited to exactly one account. Admin accounts can be unlimited.</p>
+   <button class="btn" id="refreshBtn">Refresh data</button>
+  </div>
+ </section>
+
+ <section id="matches" class="section hidden">
+  <div class="card">
+   <h2>Create / Edit Tournament</h2>
+   <input id="matchId" type="hidden">
+   <div class="two">
+    <div class="field"><label>Title</label><input id="matchTitle"></div>
+    <div class="field"><label>Game / Type</label><input id="matchType" value="Free Fire"></div>
+    <div class="field"><label>Map</label><input id="matchMap" value="Bermuda"></div>
+    <div class="field"><label>Status</label><select id="matchStatus"><option>upcoming</option><option>live</option><option>completed</option></select></div>
+    <div class="field"><label>Entry Fee</label><input id="matchFee" type="number" value="0"></div>
+    <div class="field"><label>Prize</label><input id="matchPrize"></div>
+    <div class="field"><label>Total Slots</label><input id="matchTotal" type="number" value="50"></div>
+    <div class="field"><label>Start time</label><input id="matchTime" type="datetime-local"></div>
+   </div>
+   <div class="field"><label>Banner URL</label><input id="matchImage"></div>
+   <div class="two">
+    <div class="field"><label>Winner name</label><input id="matchWinner"></div>
+    <div class="field"><label>Display time</label><input id="matchDisplayTime"></div>
+   </div>
+   <div class="actions"><button class="btn" id="saveMatch">Save</button><button class="btn secondary" id="clearMatch">Clear</button></div>
+  </div>
+  <div class="card"><h2>Tournaments</h2><div id="matchList"></div></div>
+ </section>
+
+ <section id="users" class="section hidden">
+  <div class="card"><h2>Users</h2><div class="tablewrap"><table class="table">
+   <thead><tr><th>User</th><th>UID</th><th>Balance</th><th>Status</th><th>Action</th></tr></thead><tbody id="userList"></tbody>
+  </table></div></div>
+ </section>
+
+ <section id="requests" class="section hidden">
+  <div class="card"><h2>Money Requests</h2><div class="tablewrap"><table class="table">
+   <thead><tr><th>User</th><th>Title</th><th>Amount</th><th>Type</th><th>Status</th><th>Action</th></tr></thead><tbody id="requestList"></tbody>
+  </table></div></div>
+ </section>
+
+ <section id="settings" class="section hidden">
+  <div class="card"><h2>Change My Password</h2>
+   <div class="two">
+    <div class="field"><label>New password</label><input id="newPassword" type="password" minlength="6"></div>
+    <div class="field"><label>Confirm password</label><input id="confirmPassword" type="password" minlength="6"></div>
+   </div>
+   <button class="btn" id="changePassword">Change Password</button>
+  </div>
+  <div class="card"><h2>App Settings</h2>
+   <div class="field"><label>Home banner URL</label><input id="bannerUrl"></div>
+   <div class="field"><label>Home notice</label><textarea id="homeNotice"></textarea></div>
+   <div class="field"><label>Payment number</label><input id="paymentNumber"></div>
+   <button class="btn" id="saveSettings">Save settings</button>
+  </div>
+  
+   <div class="card"><h2>App Images</h2>
+    <div class="two">
+     <div class="field"><label>Logo URL</label><input id="imgLogo"></div>
+     <div class="field"><label>Home Hero URL</label><input id="imgHero"></div>
+     <div class="field"><label>Weekly Banner URL</label><input id="imgWeekly"></div>
+     <div class="field"><label>Solo Banner URL</label><input id="imgSolo"></div>
+     <div class="field"><label>Champion Banner URL</label><input id="imgChampion"></div>
+     <div class="field"><label>Tournament Banner URL</label><input id="imgTournament"></div>
+    </div>
+    <button class="btn" id="saveImages">Save Images</button>
+   </div>
+   <div class="card"><h2>Notification</h2>
+    <div class="field"><label>Title</label><input id="notifTitle"></div>
+    <div class="field"><label>Date</label><input id="notifDate"></div>
+    <div class="field"><label>Message</label><textarea id="notifMessage"></textarea></div>
+    <button class="btn" id="sendNotification">Send Notification</button>
+   </div>
+<div class="card"><h2>Categories</h2><div class="field"><label>Comma-separated names</label><input id="categories"></div><button class="btn" id="saveCategories">Save categories</button></div>
+ </section>
+
+ <section id="admins" class="section hidden">
+  <div class="card"><h2>Add Admin</h2><p class="muted">Owner can add/remove unlimited admins. Admin cannot remove Owner.</p>
+   <div class="two"><div class="field"><label>Admin email</label><input id="adminEmail" type="email"></div><div class="field"><label>Temporary password</label><input id="adminPassword" type="password"></div></div>
+   <button class="btn" id="createAdmin">Create admin</button>
+  </div>
+  <div class="card"><h2>Admin Accounts</h2><div id="adminList"></div></div>
+ </section>
+</div></div>
+<div id="toast"></div>
+
+<script type="module">
+import {initializeApp, deleteApp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import {getFirestore, collection, collectionGroup, getDocs, getDoc, doc, setDoc, updateDoc, addDoc, deleteDoc, serverTimestamp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig={
+ apiKey:"AIzaSyBbkWyal6UM63nlA3g0rzQj8DXBs1rrmk8",
+ authDomain:"zen-z-esports-6cfdb.firebaseapp.com",
+ projectId:"zen-z-esports-6cfdb",
+ storageBucket:"zen-z-esports-6cfdb.firebasestorage.app",
+ messagingSenderId:"995968619380",
+ appId:"1:995968619380:web:a0136a91a4b287e29f1221",
+ measurementId:"G-17Y8E90HN4"
+};
+
+const appFirebase=initializeApp(firebaseConfig), auth=getAuth(appFirebase), db=getFirestore(appFirebase);
+let currentUser=null,currentRole=null,data={users:[],matches:[],admins:[],requests:[]};
+
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+function toast(s){$("toast").textContent=s;$("toast").style.display="block";setTimeout(()=>$("toast").style.display="none",2300)}
+function dt(v){if(!v)return null;if(v.seconds)return new Date(v.seconds*1000);return new Date(v)}
+
+document.querySelectorAll(".tabs button").forEach(btn=>btn.onclick=()=>{
+ document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));btn.classList.add("active");
+ document.querySelectorAll(".section").forEach(s=>s.classList.add("hidden"));$(btn.dataset.tab).classList.remove("hidden");
+});
+
+let loginMode="owner";
+const ROLE_EMAILS={owner:"owner@zenz-esports.com",admin:"admin@zenz-esports.com"};
+const ROLE_PASSWORDS={owner:"Farhan_Owner_king",admin:"Admin_69"};
+$("email").value=ROLE_EMAILS.owner;
+$("ownerMode").onclick=()=>{loginMode="owner";$("ownerMode").classList.add("active");$("adminMode").classList.remove("active");$("loginBtn").textContent="Login as Owner";$("email").value=ROLE_EMAILS.owner};
+$("adminMode").onclick=()=>{loginMode="admin";$("adminMode").classList.add("active");$("ownerMode").classList.remove("active");$("loginBtn").textContent="Login as Admin";$("email").value=ROLE_EMAILS.admin};
+$("loginBtn").onclick=async()=>{
+ const pw=$("password").value;
+ if(pw!==ROLE_PASSWORDS[loginMode]){ $("loginErr").textContent="Wrong password"; return; }
+ const email=ROLE_EMAILS[loginMode];
+ try{
+  await signInWithEmailAndPassword(auth,email,pw);
+ }catch(e){
+  try{
+   const r=await createUserWithEmailAndPassword(auth,email,pw);
+   if(loginMode==="owner") await setDoc(doc(db,"config","security"),{ownerUid:r.user.uid},{merge:true});
+   else await setDoc(doc(db,"admins",r.user.uid),{email,role:"admin",createdAt:serverTimestamp()},{merge:true});
+  }catch(e2){$("loginErr").textContent="Firebase login/setup failed: "+e2.message}
+ }
+};
+$("logoutBtn").onclick=()=>signOut(auth);
+$("changePassword").onclick=async()=>{
+ const a=$("newPassword").value,b=$("confirmPassword").value;
+ if(a.length<6)return toast("Password must be at least 6 characters");
+ if(a!==b)return toast("Passwords do not match");
+ try{
+  const {updatePassword}=await import("https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js");
+  await updatePassword(currentUser,a);
+  $("newPassword").value="";$("confirmPassword").value="";
+  toast("Password changed");
+ }catch(e){toast("Please login again, then change password")}
+};
+$("refreshBtn").onclick=loadAll;
+
+onAuthStateChanged(auth,async user=>{
+ currentUser=user;
+ if(!user){$("login").classList.remove("hidden");$("app").classList.add("hidden");return}
+ let sec=await getDoc(doc(db,"config","security"));
+ if(!sec.exists() && user.email===ROLE_EMAILS.owner){
+  await setDoc(doc(db,"config","security"),{ownerUid:user.uid},{merge:true});
+  sec=await getDoc(doc(db,"config","security"));
+ }
+ const security=sec.exists()?sec.data():{};
+ const adminDoc=await getDoc(doc(db,"admins",user.uid));
+ currentRole=user.uid===security.ownerUid?"owner":(adminDoc.exists()&&adminDoc.data().role==="admin"?"admin":null);
+ if(!currentRole){await signOut(auth);$("loginErr").textContent="No admin permission for this account.";return}
+ $("login").classList.add("hidden");$("app").classList.remove("hidden");$("role").textContent=currentRole.toUpperCase();
+ $("adminsTab").style.display=currentRole==="owner"?"block":"none";
+ loadAll();
+});
+
+async function loadAll(){
+  data={users:[],matches:[],admins:[],requests:[]};
+  const errors=[];
+
+  // Load each source independently so one permission/query error cannot blank the whole panel.
+  try{
+    const m=await getDocs(collection(db,"matches"));
+    data.matches=m.docs.map(d=>({id:d.id,...d.data()}));
+  }catch(e){ errors.push("Tournaments: "+e.code+" — "+e.message); }
+
+  // Money requests use a dedicated top-level collection for reliable Admin/HopWeb syncing.
+  // Canonical source: every User Panel money request is stored under users/{uid}/transactions.
+  const uidSet=new Set();
+  try{
+    const tx=await getDocs(collectionGroup(db,"transactions"));
+    tx.forEach(t=>{
+      const parts=t.ref.path.split("/");
+      if(parts.length!==4 || parts[0]!=="users" || parts[2]!=="transactions") return;
+      const uid=parts[1], d=t.data();
+      if(d.type!=="deposit" && d.type!=="withdraw") return;
+      uidSet.add(uid);
+      data.requests.push({uid,id:t.id,user:uid,source:"transactions",...d});
+    });
+  }catch(e){
+    errors.push("Money Requests: "+e.code+" — "+e.message+" (Deploy firestore.rules, then Refresh)");
+  }
+
+  // Load the normal users collection if allowed.
+  try{
+    const u=await getDocs(collection(db,"users"));
+    u.docs.forEach(d=>{ data.users.push({id:d.id,...d.data()}); uidSet.add(d.id); });
+  }catch(e){ errors.push("Users: "+e.code+" — "+e.message); }
+
+  // Repair/discover user profiles from transaction owners. This handles older accounts
+  // where the transaction exists but the parent user document is missing.
+  for(const uid of uidSet){
+    if(data.users.some(u=>u.id===uid))continue;
+    try{
+      const snap=await getDoc(doc(db,"users",uid));
+      data.users.push(snap.exists()
+        ? {id:uid,...snap.data()}
+        : {id:uid,appName:"User",email:"",uid,balance:0,missingProfile:true});
+    }catch(e){
+      data.users.push({id:uid,appName:"User",email:"",uid,balance:0,missingProfile:true});
+    }
+  }
+
+  // Add proper display names to requests after users have been resolved.
+  data.requests=data.requests.map(r=>{
+    const u=data.users.find(x=>x.id===r.uid);
+    return {...r,user:u?.appName||u?.email||r.uid};
+  });
+
+  try{
+    const a=await getDocs(collection(db,"admins"));
+    data.admins=a.docs.map(d=>({id:d.id,...d.data()}));
+  }catch(e){
+    // Owner can still use the panel even if the admins list is temporarily unavailable.
+    if(currentRole!=="owner") errors.push("Admins: "+e.code+" — "+e.message);
+  }
+
+  $("countUsers").textContent=data.users.length;
+  $("countMatches").textContent=data.matches.length;
+  $("countAdmins").textContent=data.admins.length || (currentRole==="owner" ? 1 : 0);
+  $("countPending").textContent=data.requests.filter(x=>String(x.status||"").toLowerCase()==="pending").length;
+
+  renderMatches(); renderUsers(); renderRequests();
+  try{await loadSettings();}catch(e){errors.push("Settings: "+e.code+" — "+e.message);}
+
+  let box=$("syncError");
+  if(errors.length){
+    if(!box){
+      box=document.createElement("div"); box.id="syncError";
+      box.style.cssText="margin:14px 20px;padding:12px 14px;border:1px solid #7f1d1d;background:#2a0f14;color:#fecaca;border-radius:12px;font-size:13px;line-height:1.5";
+      $("app").prepend(box);
+    }
+    box.innerHTML="<b>Firebase sync warning</b><br>"+errors.map(esc).join("<br>");
+    console.error("ZEN-Z Admin Firebase errors",errors);
+  }else if(box) box.remove();
+}
+
+function renderMatches(){
+ $("matchList").innerHTML=data.matches.map(m=>`
+ <div class="card"><div class="top"><div><h3>${esc(m.title||"Untitled")}</h3>
+ <span class="badge">${esc(m.type||"Free Fire")}</span> <span class="badge">${esc(m.status||"upcoming")}</span></div>
+ <div class="actions"><button class="btn small" onclick="window.editMatch('${esc(m.id)}')">Edit</button><button class="btn red small" onclick="window.deleteMatch('${esc(m.id)}')">Delete</button></div></div>
+ <div class="muted">Prize: ${esc(m.prize)} · Fee: ${esc(m.fee)} · Slots: ${esc(m.joined||0)}/${esc(m.total||0)} · ${esc(m.map||"")}</div></div>`).join("")||"<p class='muted'>No tournaments.</p>";
+}
+window.editMatch=id=>{
+ const m=data.matches.find(x=>x.id===id);if(!m)return;
+ $("matchId").value=m.id;$("matchTitle").value=m.title||"";$("matchType").value=m.type||"Free Fire";$("matchMap").value=m.map||"Bermuda";$("matchStatus").value=m.status||"upcoming";
+ $("matchFee").value=m.fee??0;$("matchPrize").value=m.prize??"";$("matchTotal").value=m.total??50;$("matchImage").value=m.img||"";
+ $("matchWinner").value=m.winnerName||m.champion||"";$("matchDisplayTime").value=m.time||"";
+ const d=dt(m.startTime);$("matchTime").value=d&&!isNaN(d)?new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16):"";
+ document.querySelector('[data-tab="matches"]').click();scrollTo(0,0);
+};
+window.deleteMatch=async id=>{if(!confirm("Delete tournament?"))return;await deleteDoc(doc(db,"matches",id));toast("Deleted");loadAll()};
+$("clearMatch").onclick=()=>{["matchId","matchTitle","matchMap","matchImage","matchWinner","matchDisplayTime","matchTime"].forEach(x=>$(x).value="");$("matchType").value="Free Fire";$("matchStatus").value="upcoming";$("matchFee").value=0;$("matchTotal").value=50};
+$("saveMatch").onclick=async()=>{
+ const id=$("matchId").value.trim();
+ const d={title:$("matchTitle").value.trim(),type:$("matchType").value.trim()||"Free Fire",map:$("matchMap").value.trim()||"Bermuda",status:$("matchStatus").value,fee:Number($("matchFee").value||0),prize:$("matchPrize").value.trim(),total:Number($("matchTotal").value||0),img:$("matchImage").value.trim(),winnerName:$("matchWinner").value.trim(),time:$("matchDisplayTime").value.trim()};
+ if($("matchTime").value)d.startTime=new Date($("matchTime").value);
+ if(id)await updateDoc(doc(db,"matches",id),d);else{d.joined=0;await addDoc(collection(db,"matches"),d)}
+ toast("Tournament saved");$("clearMatch").click();loadAll();
+};
+
+function renderUsers(){
+ $("userList").innerHTML=data.users.map(u=>`<tr><td><b>${esc(u.appName||"User")}</b><br><span class="muted">${esc(u.email||"")}</span></td><td>${esc(u.id)}</td><td>${Number(u.balance||0).toFixed(2)}</td><td>${u.disabled?'<span class="badge danger">Disabled</span>':'<span class="badge ok">Active</span>'}</td><td><div class="actions"><button class="btn small" onclick="window.balance('${esc(u.id)}')">Balance</button><button class="btn secondary small" onclick="window.disableUser('${esc(u.id)}',${!!u.disabled})">${u.disabled?"Enable":"Disable"}</button></div></td></tr>`).join("");
+}
+window.balance=async id=>{const u=data.users.find(x=>x.id===id),v=prompt("New balance",u?.balance??0);if(v===null||isNaN(v))return;await updateDoc(doc(db,"users",id),{balance:Number(v)});toast("Balance updated");loadAll()};
+window.disableUser=async(id,state)=>{await updateDoc(doc(db,"users",id),{disabled:!state});toast("User updated");loadAll()};
+
+function renderRequests(){
+ $("requestList").innerHTML=data.requests.filter(x=>String(x.status||"").toLowerCase()==="pending").map(x=>`<tr><td>${esc(x.user)}<br><span class="muted">${esc(x.uid)}</span></td><td>${esc(x.title)}</td><td>${esc(x.amount)}</td><td>${esc(x.type)}</td><td><span class="badge warn">pending</span></td><td><div class="actions"><button class="btn green small" onclick="window.approve('${esc(x.uid)}','${esc(x.id)}','${esc(x.type)}','${esc(x.amount)}')">Approve</button><button class="btn red small" onclick="window.reject('${esc(x.uid)}','${esc(x.id)}')">Reject</button></div></td></tr>`).join("")||"<tr><td colspan='6' class='muted'>No pending requests.</td></tr>";
+}
+window.approve=async(uid,tid,type,amount)=>{
+ const u=data.users.find(x=>x.id===uid)||{id:uid,balance:0};
+ let n=Number(String(amount).replace(/[^\d.-]/g,""));n=type==="withdraw"?-Math.abs(n):Math.abs(n);
+ if(type==="withdraw"&&Number(u.balance||0)<Math.abs(n))return toast("Insufficient balance");
+ try{
+   // setDoc(..., merge:true) also repairs older accounts whose users/{uid} profile is missing.
+   await setDoc(doc(db,"users",uid),{uid,appName:u.appName||"User",email:u.email||"",balance:Number(u.balance||0)+n},{merge:true});
+   await updateDoc(doc(db,"users",uid,"transactions",tid),{status:"success",processedAt:serverTimestamp()});
+   await setDoc(doc(db,"moneyRequests",tid),{status:"success",processedAt:serverTimestamp()},{merge:true}).catch(()=>{});
+   toast("Approved");loadAll();
+ }catch(e){toast("Approve failed: "+e.message);console.error(e);}
+};
+window.reject=async(uid,tid)=>{try{await updateDoc(doc(db,"users",uid,"transactions",tid),{status:"rejected",processedAt:serverTimestamp()});await setDoc(doc(db,"moneyRequests",tid),{status:"rejected",processedAt:serverTimestamp()},{merge:true}).catch(()=>{});toast("Rejected");loadAll()}catch(e){toast("Reject failed: "+e.message)}};
+
+async function loadSettings(){
+ try{
+  const b=await getDoc(doc(db,"config","banner"));if(b.exists()){$("bannerUrl").value=b.data().url||"";$("homeNotice").value=b.data().notice||""}
+  const p=await getDoc(doc(db,"config","payment"));if(p.exists())$("paymentNumber").value=p.data().number||"";
+  const im=await getDoc(doc(db,"config","images"));if(im.exists()){const d=im.data();
+   $("imgLogo").value=d.logo||"";$("imgHero").value=d.hero||"";$("imgWeekly").value=d.weekly||"";
+   $("imgSolo").value=d.solo||"";$("imgChampion").value=d.champion||"";$("imgTournament").value=d.tournament||"";
+  }
+  const c=await getDocs(collection(db,"categories"));$("categories").value=c.docs.map(x=>x.data().name).join(", ");
+ }catch(e){toast("Settings: "+e.message)}
+}
+$("saveSettings").onclick=async()=>{await setDoc(doc(db,"config","banner"),{url:$("bannerUrl").value.trim(),notice:$("homeNotice").value},{merge:true});await setDoc(doc(db,"config","payment"),{number:$("paymentNumber").value.trim()},{merge:true});toast("Settings saved")};
+$("saveImages").onclick=async()=>{
+  await setDoc(doc(db,"config","images"),{
+    logo:$("imgLogo").value.trim(),hero:$("imgHero").value.trim(),weekly:$("imgWeekly").value.trim(),
+    solo:$("imgSolo").value.trim(),champion:$("imgChampion").value.trim(),tournament:$("imgTournament").value.trim()
+  },{merge:true});toast("Images saved");
+};
+$("sendNotification").onclick=async()=>{
+  const title=$("notifTitle").value.trim(),message=$("notifMessage").value.trim(),date=$("notifDate").value.trim()||new Date().toLocaleDateString();
+  if(!title||!message)return toast("Title and message required");
+  await addDoc(collection(db,"notifications"),{title,message,date,timestamp:serverTimestamp(),createdBy:currentUser.uid});
+  $("notifTitle").value="";$("notifMessage").value="";toast("Notification sent");
+};
+$("saveCategories").onclick=async()=>{
+ const names=$("categories").value.split(",").map(x=>x.trim()).filter(Boolean);
+ const old=await getDocs(collection(db,"categories"));for(const d of old.docs)await deleteDoc(d.ref);
+ for(const name of names)await addDoc(collection(db,"categories"),{name});
+ toast("Categories saved");
+};
+
+async function loadAdmins(){
+ const a=await getDocs(collection(db,"admins"));data.admins=a.docs.map(d=>({id:d.id,...d.data()}));
+ $("countAdmins").textContent=data.admins.length;
+ $("adminList").innerHTML=data.admins.map(a=>`<div class="card"><b>${esc(a.email||a.id)}</b><div class="muted">${esc(a.id)} · ${esc(a.role||"admin")}</div><br><button class="btn red small" onclick="window.removeAdmin('${esc(a.id)}')">Revoke</button></div>`).join("")||"<p class='muted'>No admin accounts.</p>";
+}
+document.querySelector('[data-tab="admins"]').onclick=async()=>{document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));document.querySelector('[data-tab="admins"]').classList.add("active");document.querySelectorAll(".section").forEach(s=>s.classList.add("hidden"));$("admins").classList.remove("hidden");if(currentRole==="owner")loadAdmins()};
+$("createAdmin").onclick=async()=>{
+ if(currentRole!=="owner")return toast("Owner only");
+ const em=$("adminEmail").value.trim(),pw=$("adminPassword").value;
+ if(!em||pw.length<6)return toast("Email and password (6+ chars) required");
+ try{
+  const temp=initializeApp(firebaseConfig,"adminCreator"+Date.now()),a=getAuth(temp),r=await createUserWithEmailAndPassword(a,em,pw);
+  await setDoc(doc(db,"admins",r.user.uid),{email:em,role:"admin",createdBy:currentUser.uid,createdAt:serverTimestamp()});
+  await signOut(a);await deleteApp(temp);$("adminEmail").value="";$("adminPassword").value="";toast("Admin created");loadAdmins();
+ }catch(e){toast(e.message)}
+};
+window.removeAdmin=async id=>{if(currentRole!=="owner")return;if(confirm("Revoke this admin?")){await deleteDoc(doc(db,"admins",id));toast("Admin revoked");loadAdmins()}};
+</script>
+</body>
+</html>
